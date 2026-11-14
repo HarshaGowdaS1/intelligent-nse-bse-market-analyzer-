@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile metadata",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 150 },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "roleTitle": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "lastLoginAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["uid", "email", "displayName"]
+    },
+    "Watchlist": {
+      "title": "Watchlist",
+      "description": "User stock watchlist",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "symbols": { "type": "array" },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "symbols"]
+    },
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "User workspace preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "defaultExchange": { "type": "string", "maxLength": 10 },
+        "defaultTimeframe": { "type": "string", "maxLength": 10 },
+        "currencyFormat": { "type": "string", "maxLength": 30 },
+        "highPrecisionMode": { "type": "boolean" },
+        "activeHorizon": { "type": "string", "maxLength": 10 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "defaultExchange", "defaultTimeframe"]
+    },
+    "StockComparison": {
+      "title": "StockComparison",
+      "description": "Saved stock comparison",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "symbolA": { "type": "string", "maxLength": 30 },
+        "symbolB": { "type": "string", "maxLength": 30 },
+        "timeframe": { "type": "string", "maxLength": 10 },
+        "savedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["userId", "symbolA", "symbolB", "timeframe"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile documents"
+    },
+    "/users/{userId}/watchlists/{watchlistId}": {
+      "schema": { "$ref": "#/entities/Watchlist" },
+      "description": "User private watchlists"
+    },
+    "/users/{userId}/preferences/{preferenceId}": {
+      "schema": { "$ref": "#/entities/UserPreferences" },
+      "description": "User private preferences"
+    },
+    "/users/{userId}/comparisons/{comparisonId}": {
+      "schema": { "$ref": "#/entities/StockComparison" },
+      "description": "User saved comparisons"
+    }
+  }
+}

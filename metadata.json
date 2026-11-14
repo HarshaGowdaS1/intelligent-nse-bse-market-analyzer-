@@ -1,0 +1,6 @@
+{
+  "name": "NSE-BSE Market Analyzer",
+  "description": "Educational quantitative terminal and AI/ML stock analytics platform for National Stock Exchange (NSE) and Bombay Stock Exchange (BSE) equities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

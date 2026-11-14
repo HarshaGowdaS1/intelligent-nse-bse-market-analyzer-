@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common security helpers
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Connection testing endpoint for health check
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Schema Validation Helpers
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName']) &&
+             data.keys().hasOnly(['uid', 'email', 'displayName', 'roleTitle', 'createdAt', 'lastLoginAt', 'photoURL']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 150 &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             (!('roleTitle' in data) || (data.roleTitle is string && data.roleTitle.size() <= 100));
+    }
+
+    function isValidWatchlist(data) {
+      return data.keys().hasAll(['userId', 'symbols']) &&
+             data.keys().hasOnly(['userId', 'symbols', 'updatedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.symbols is list && data.symbols.size() <= 100;
+    }
+
+    function isValidPreferences(data) {
+      return data.keys().hasAll(['userId', 'defaultExchange', 'defaultTimeframe']) &&
+             data.keys().hasOnly(['userId', 'defaultExchange', 'defaultTimeframe', 'currencyFormat', 'highPrecisionMode', 'activeHorizon', 'updatedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.defaultExchange is string && data.defaultExchange.size() <= 10 &&
+             data.defaultTimeframe is string && data.defaultTimeframe.size() <= 10;
+    }
+
+    function isValidComparison(data) {
+      return data.keys().hasAll(['userId', 'symbolA', 'symbolB', 'timeframe']) &&
+             data.keys().hasOnly(['userId', 'symbolA', 'symbolB', 'timeframe', 'savedAt']) &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.symbolA is string && data.symbolA.size() <= 30 &&
+             data.symbolB is string && data.symbolB.size() <= 30 &&
+             data.timeframe is string && data.timeframe.size() <= 10;
+    }
+
+    // User Profile Documents
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().uid == existing().uid;
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // User Private Watchlists
+      match /watchlists/{watchlistId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId) && isValidWatchlist(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId) && isValidWatchlist(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(watchlistId);
+      }
+
+      // User Private Preferences
+      match /preferences/{preferenceId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(preferenceId) && isValidPreferences(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(preferenceId) && isValidPreferences(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(preferenceId);
+      }
+
+      // User Private Comparisons
+      match /comparisons/{comparisonId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(userId) && isValidId(comparisonId) && isValidComparison(incoming());
+        allow update: if isOwner(userId) && isValidId(userId) && isValidId(comparisonId) && isValidComparison(incoming()) && incoming().userId == existing().userId;
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(comparisonId);
+      }
+    }
+  }
+}
